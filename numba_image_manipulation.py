@@ -84,6 +84,7 @@ def gpu_luminosity(px_val):
 def gpu_lightness(px_val):
     return (0.5 * (max(px_val[0], px_val[1], px_val[2]) + min(px_val[0], px_val[1], px_val[2]))) // 1
 
+
 # Multiple functions needed because numba also does not like device funtions as parameter
 @cuda.jit()
 def gpu_greyscale_avg(img):
@@ -151,7 +152,22 @@ def test_greyscale(img, alg, stencil=False, gpu=False):
     return img
 
 
+def multiple(images):
+    img_data_arrays = []
+    s_time = time()
+    for image in images:
+        test_img = Image.open(image)
+        data = np.array(test_img)
+        test_img = None
+        img_data_arrays.append(test_greyscale(data, "avg", gpu=True))
+        img_data_arrays.append(test_greyscale(data, "lightness", gpu=True))
+        img_data_arrays.append(test_greyscale(data, "luminosity", gpu=True))
+        data = None
+    print("Total for 3 Images and 3 greyscales each", time() - s_time)
+
+
 if __name__ == "__main__":
+    multiple(["test_img.jpg", "test_img_2.jpg", "test_img_3.jpg"])
     test_img = Image.open("test_img_2.jpg")
     data = np.array(test_img)
 
