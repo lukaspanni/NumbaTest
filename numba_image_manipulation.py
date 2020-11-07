@@ -1,4 +1,3 @@
-import math
 from time import time
 
 import numpy as np
@@ -136,7 +135,6 @@ def test_greyscale(img, alg, stencil=False, gpu=False):
         img = greyscale(img, algorithms[alg]["cpu"])
         print(time() - start)
     elif stencil and not gpu:
-        print(img.shape)
         start = time()
         # works!
         img = algorithms[alg]["stencil"](img).astype(np.uint8)[:, :, 0]
@@ -163,13 +161,25 @@ def multiple(images):
         img_data_arrays.append(test_greyscale(data, "lightness", gpu=True))
         img_data_arrays.append(test_greyscale(data, "luminosity", gpu=True))
         data = None
-    print("Total for 3 Images and 3 greyscales each", time() - s_time)
+    print("GPU: Total for 3 Images and 3 greyscales each", time() - s_time)
+    s_time = time()
+    for image in images:
+        test_img = Image.open(image)
+        data = np.array(test_img)
+        test_img = None
+        img_data_arrays.append(test_greyscale(data, "avg", stencil=True))
+        img_data_arrays.append(test_greyscale(data, "lightness", stencil=True))
+        img_data_arrays.append(test_greyscale(data, "luminosity", stencil=True))
+        data = None
+    print("Stencil: Total for 3 Images and 3 greyscales each", time() - s_time)
 
 
 if __name__ == "__main__":
     multiple(["test_img.jpg", "test_img_2.jpg", "test_img_3.jpg"])
     test_img = Image.open("test_img_2.jpg")
     data = np.array(test_img)
+
+    exit()
 
     img_data = test_greyscale(data.copy(), "avg", gpu=True)
     Image.fromarray(img_data).show()
