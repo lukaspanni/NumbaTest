@@ -13,7 +13,7 @@ gaussian_kernel_factor = 1 / 16
 # simple 3x3 sobel kernel
 sobel_kernel = np.array([[1, 0, -1],
                          [2, 0, -2],
-                         [1, 0, -1]], dtype=np.uint16)
+                         [1, 0, -1]], dtype=np.int16)
 sobel_kernel_factor = 1 / 8
 
 
@@ -21,7 +21,7 @@ sobel_kernel_factor = 1 / 8
 def apply_kernel_cpu(img, kernel, kernel_factor):
     for i in prange(1, img.shape[0] - 1):
         for j in prange(1, img.shape[1] - 1):
-            value = np.array([0, 0, 0], dtype=np.uint16)
+            value = np.array([0, 0, 0], dtype=np.int16)
             for k in prange(-1, 2):
                 for l in prange(-1, 2):
                     value += kernel[k + 1, l + 1] * img[i + k, j + l]
@@ -61,11 +61,12 @@ def apply_kernel_cuda(img, kernel, kernel_factor):
 def kernels(img, kernel, kernel_factor, gpu=False):
     if not gpu:
         start = time()
-        # algorithm needs uint16 array!
-        img = apply_kernel_cpu(img.astype(np.uint16), kernel, kernel_factor).astype(np.uint8)[:, :, :]
+        # algorithm needs int16 array!
+        img = apply_kernel_cpu(img.astype(np.int16), kernel, kernel_factor).astype(np.uint8)[:, :, :]
         print(time() - start)
     else:
         start = time()
+        img = img.astype(np.int16)
         dev_arr = cuda.to_device(img)
         apply_kernel_cuda[(32, 32), (16, 16)](dev_arr, kernel, kernel_factor)
         img = dev_arr.copy_to_host()
@@ -75,8 +76,8 @@ def kernels(img, kernel, kernel_factor, gpu=False):
 
 
 if __name__ == "__main__":
-    test_img = Image.open("test_img.jpg")
+    test_img = Image.open("simple_test_img.jpg")
     data = np.array(test_img)
-    mainpulated_img = kernels(data, gaussian_kernel, gaussian_kernel_factor)
+    mainpulated_img = kernels(data, sobel_kernel, sobel_kernel_factor)
     Image.fromarray(mainpulated_img).show()
     exit()
